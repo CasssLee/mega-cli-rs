@@ -476,12 +476,15 @@ async fn download_aggregate(
 
     drop(rx);
     for handle in involved_nodes {
-        tx.send(handle).await?;
+        if tx.send(handle).await.is_err() {
+            break;
+        }
     }
     drop(tx);
 
     for task in tasks {
-        task.await??;
+        task.await?
+            .context("something happened to the worker in download aggregate")?;
     }
 
     Ok(())
